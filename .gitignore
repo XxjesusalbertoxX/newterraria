@@ -1,0 +1,16 @@
+!Dockerfile
+!README.md
+!docker-compose-example.yml
+terraria-server.zip
+terraria-server/
+docker-compose.yml
+Server*
+.scripts/test*
+
+Worlds/*
+!Worlds/.gitkeep
+
+backups/
+build.txt
+
+.DS_Store
