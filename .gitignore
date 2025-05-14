@@ -12,7 +12,6 @@ tModLoader/steamapps/**
 
 tModLoader/serverconfig.txt
 
-docker-compose.yml
 favorites.json
 server
 

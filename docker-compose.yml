@@ -19,8 +19,8 @@ services:
       ### Comment the variable 'WORLD' to create a new world (Using AUTOCREATE, WORLDNAME, DIFFICULTY and SEED)
       ### Uncomment the variable 'WORLD' to use an existing world. This will ebable the server to start with no user interaction through the cli.
       # - WORLD=/home/tml/.local/share/Terraria/tModLoader/Worlds/tmlCalamity1.wld
-      - AUTOCREATE=1
+      - AUTOCREATE=3
       - WORLDNAME=tmlCalamity1.wld
-      - DIFFICULTY=1
+      - DIFFICULTY=2
       - PASSWORD=passworld
-      - MOTD="Welcome to my tModLoader Server :)"
+      - MOTD="Si se pudo mi gente"
