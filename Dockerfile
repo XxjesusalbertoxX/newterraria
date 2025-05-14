@@ -29,13 +29,10 @@ WORKDIR $HOME
 ENV SCRIPTS_PATH="/home/tml/.local/share/Terraria/tModLoader/Scripts"
 ENV PATH="${SCRIPTS_PATH}:${PATH}"
 
-# Using Environment variables for server config by default. If you would like to use a serverconfig.txt file instead, uncomment the following variable or use it in your docker-compose.yml environment section.
-# ENV USE_CONFIG_FILE=1
-
 # Environment variables for server settings
 ENV WORLD=""
 ENV AUTOCREATE="1"
-ENV SEAD=""
+ENV SEED=""
 ENV WORLDNAME="tmlWorld.wld"
 ENV DIFFICULTY="1"
 ENV MAXPLAYERS="16"
@@ -50,20 +47,19 @@ ENV UPNP="1"
 ENV NPCSTREAM="1"
 ENV PRIORITY=""
 
-# ENV MODPATH="/home/tml/.local/share/Terraria/tModLoader/Mods/"
-
-
 # Update SteamCMD and verify latest version
 RUN steamcmd +quit
 
-# ADD --chown=tml:tml https://raw.githubusercontent.com/tModLoader/tModLoader/1.4.4/patches/tModLoader/Terraria/release_extras/DedicatedServerUtils/manage-tModLoaderServer.sh .
-
-# If you need to make local edits to the management script copy it to the same
-# directory as this file, comment out the above line and uncomment this line:
+# Copiar el script de gestión
 COPY --chown=tml:tml manage-tModLoaderServer.sh .
 
+# Asegurarse de que el script sea ejecutable
+RUN chmod +x manage-tModLoaderServer.sh
+
+# Instalar tModLoader
 RUN ./manage-tModLoaderServer.sh install-tml --github --tml-version $TML_VERSION
 
 EXPOSE 7777
 
-ENTRYPOINT [ "entrypoint.sh" ]
+# Definir el entrypoint
+ENTRYPOINT [ "./manage-tModLoaderServer.sh", "start" ]
