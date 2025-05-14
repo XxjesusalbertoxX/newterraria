@@ -1,15 +1,19 @@
-!Dockerfile
-!README.md
-!docker-compose-example.yml
-terraria-server.zip
-terraria-server/
-Server*
-.scripts/test*
+tModLoader/Worlds/**
+!tModLoader/Worlds/.gitkeep
 
-Worlds/*
-!Worlds/.gitkeep
+tModLoader/Mods/*
+!tModLoader/Mods/.gitkeep
+!tModLoader/Mods/enabled.json
+!tModLoader/Mods/install.txt
 
-backups/
-build.txt
+tModLoader/logs/**
 
-.DS_Store
+tModLoader/steamapps/**
+
+tModLoader/serverconfig.txt
+
+docker-compose.yml
+favorites.json
+server
+
+

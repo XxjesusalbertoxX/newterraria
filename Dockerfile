@@ -1,100 +1,69 @@
-FROM debian:10-slim AS base
+FROM steamcmd/steamcmd:alpine-3
 
-ARG VERSION=latest
+# Install prerequisites
+RUN apk update \
+ && apk add --no-cache bash curl tmux libstdc++ libgcc icu-libs bash tmux \
+ && rm -rf /var/cache/apk/*
 
-ENV TERRARIA_VERSION=$VERSION
-ENV LATEST_VERSION=""
-ENV TERRARIA_DIR=/root/.local/share/Terraria
-ENV PATH="${TERRARIA_DIR}:${PATH}"
+# Fix 32 and 64 bit library conflicts
+RUN mkdir /steamlib \
+ && mv /lib/libstdc++.so.6 /steamlib \
+ && mv /lib/libgcc_s.so.1 /steamlib
+ENV LD_LIBRARY_PATH /steamlib
 
-RUN mkdir -p ${TERRARIA_DIR}
+# Set a specific tModLoader version, defaults to the latest Github release
+ARG TML_VERSION
 
-WORKDIR ${TERRARIA_DIR}
+# Create tModLoader user and drop root permissions
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g $GID tml \
+ && adduser tml -u $UID -G tml -h /home/tml -D
 
-COPY ./.scripts/* .
+USER tml
+ENV USER tml
+ENV HOME /home/tml
+WORKDIR $HOME
 
-RUN chmod +x \
-    create-server-config.sh \
-    get-terraria-version.sh \
-    init-TerrariaServer-amd64.sh \
-    init-TerrariaServer-arm64.sh
+# Adding Scripts to PATH
+ENV SCRIPTS_PATH="/home/tml/.local/share/Terraria/tModLoader/Scripts"
+ENV PATH="${SCRIPTS_PATH}:${PATH}"
 
-RUN apt-get update -y && apt-get install -y unzip wget
+# Using Environment variables for server config by default. If you would like to use a serverconfig.txt file instead, uncomment the following variable or use it in your docker-compose.yml environment section.
+# ENV USE_CONFIG_FILE=1
 
-RUN if [ "${TERRARIA_VERSION:-latest}" = "latest" ]; then \
-    echo "using latest version." \
-    &&  export LATEST_VERSION=$(bash get-terraria-version.sh) \
-    &&  export TERRARIA_VERSION=${LATEST_VERSION}; fi \
-    && echo "TERRARIA_VERSION=${TERRARIA_VERSION}" \
-    && echo "${TERRARIA_VERSION}" > ${TERRARIA_DIR}/terraria-version.txt \
-    && wget https://terraria.org/api/download/pc-dedicated-server/terraria-server-${TERRARIA_VERSION}.zip -O terraria-server.zip \  
-    && unzip terraria-server.zip -d ${TERRARIA_DIR} && mv ${TERRARIA_DIR}/*/* ${TERRARIA_DIR} \
-    && rm -rf terraria-server.zip ${TERRARIA_DIR}/Mac ${TERRARIA_DIR}/Windows ${TERRARIA_DIR}/${TERRARIA_VERSION} \
-    && mv ${TERRARIA_DIR}/Linux/* ${TERRARIA_DIR}/ \
-    && rm -rf ${TERRARIA_DIR}/Linux \
-    && cd ${TERRARIA_DIR}
+# Environment variables for server settings
+ENV WORLD=""
+ENV AUTOCREATE="1"
+ENV SEAD=""
+ENV WORLDNAME="tmlWorld.wld"
+ENV DIFFICULTY="1"
+ENV MAXPLAYERS="16"
+ENV PORT="7777"
+ENV PASSWORD=""
+ENV MOTD=""
+ENV WORLDPATH="/home/tml/.local/share/Terraria/tModLoader/Worlds/"
+ENV BANLIST="banlist.txt"
+ENV SECURE="0"
+ENV LANGUAGE="en/US"
+ENV UPNP="1"
+ENV NPCSTREAM="1"
+ENV PRIORITY=""
 
-ENV autocreate=1 \
-    seed='' \
-    worldname=TerrariaWorld \
-    difficulty=1 \
-    maxplayers=16 \
-    port=7777 \
-    password='' \
-    motd="Welcome!" \
-    worldpath=${TERRARIA_DIR}/Worlds \
-    banlist=banlist.txt \
-    secure=1 \
-    language=en/US \
-    upnp=1 \
-    npcstream=1 \
-    priority=1
+# ENV MODPATH="/home/tml/.local/share/Terraria/tModLoader/Mods/"
 
-RUN mkdir -p ${TERRARIA_DIR}
 
-WORKDIR ${TERRARIA_DIR}
+# Update SteamCMD and verify latest version
+RUN steamcmd +quit
 
-RUN mkdir -p ${TERRARIA_DIR}/Worlds
+# ADD --chown=tml:tml https://raw.githubusercontent.com/tModLoader/tModLoader/1.4.4/patches/tModLoader/Terraria/release_extras/DedicatedServerUtils/manage-tModLoaderServer.sh .
 
-### amd-64 ###
+# If you need to make local edits to the management script copy it to the same
+# directory as this file, comment out the above line and uncomment this line:
+COPY --chown=tml:tml manage-tModLoaderServer.sh .
 
-FROM base AS build-amd64
+RUN ./manage-tModLoaderServer.sh install-tml --github --tml-version $TML_VERSION
 
-RUN chmod +x TerrariaServer.bin.x86_64
+EXPOSE 7777
 
-ENTRYPOINT [ "./init-TerrariaServer-amd64.sh" ]
-
-### arm-64 ###
-
-FROM mono:latest AS build-arm64
-
-ENV TERRARIA_DIR=/root/.local/share/Terraria
-
-ENV PATH="${TERRARIA_DIR}:${PATH}" \
-    autocreate=1 \
-    seed='' \
-    worldname=TerrariaWorld \
-    difficulty=1 \
-    maxplayers=16 \
-    port=7777 \
-    password='' \
-    motd="Welcome!" \
-    worldpath=${TERRARIA_DIR}/Worlds \
-    banlist=banlist.txt \
-    secure=1 \
-    language=en/US \
-    upnp=1 \
-    npcstream=1 \
-    priority=1
-
-RUN mkdir -p ${TERRARIA_DIR}
-
-WORKDIR ${TERRARIA_DIR}
-
-COPY --from=base ${TERRARIA_DIR}/* ./
-
-RUN chmod +x TerrariaServer.exe
-
-RUN rm System* Mono* monoconfig mscorlib.dll
-
-ENTRYPOINT [ "./init-TerrariaServer-arm64.sh" ]
+ENTRYPOINT [ "entrypoint.sh" ]
