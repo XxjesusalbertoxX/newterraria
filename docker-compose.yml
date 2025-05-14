@@ -12,7 +12,7 @@ services:
     tty: true
     stdin_open: true
     ports:
-      - 7785:7777
+      - 7779:7777
     volumes:
       - ./tModLoader:/home/tml/.local/share/Terraria/tModLoader
     environment:
